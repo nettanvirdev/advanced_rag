@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="t d">
+  <title id="t">Advanced RAG</title>
+  <desc id="d">Chunks are stored in a vector database, filtered through a reranking funnel, and turned into an answer that cites its chunk, cat.txt#25.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M1 1.5 L8.5 5 L1 8.5" fill="none" stroke="#9a6a3e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="640" height="360" fill="#f4f0e7"/>
+  <rect x="10.5" y="10.5" width="619" height="339" fill="none" stroke="#2b2721" stroke-opacity=".14"/>
+
+  <g fill="none" stroke="#2b2721" stroke-linecap="round" stroke-linejoin="round">
+    <!-- chunks: small cards -->
+    <rect x="52" y="112" width="88" height="120" rx="6" fill="#efeadf" stroke-opacity=".35" transform="rotate(-7 96 172)"/>
+    <rect x="46" y="118" width="88" height="120" rx="6" fill="#f2ede3" stroke-opacity=".5" transform="rotate(-3 90 178)"/>
+    <rect x="40" y="124" width="88" height="120" rx="6" fill="#fcfaf4" stroke-width="2"/>
+    <g stroke-width="2" stroke-opacity=".5">
+      <path d="M54 148 h52"/><path d="M54 166 h60"/><path d="M54 184 h46"/><path d="M54 202 h58"/><path d="M54 220 h40"/>
+    </g>
+    <path d="M54 184 h36" stroke="#9a6a3e" stroke-width="7" stroke-opacity=".38"/>
+
+    <!-- vector database -->
+    <path d="M188 142 v92 a54 14 0 0 0 108 0 v-92" fill="#fcfaf4" stroke-width="2"/>
+    <ellipse cx="242" cy="142" rx="54" ry="14" fill="#fcfaf4" stroke-width="2"/>
+    <path d="M188 174 a54 14 0 0 0 108 0 M188 206 a54 14 0 0 0 108 0" stroke-opacity=".35" stroke-width="2"/>
+
+    <!-- rerank funnel: many candidates in, the best one out -->
+    <g fill="#2b2721" stroke="none" fill-opacity=".35">
+      <circle cx="352" cy="118" r="5"/><circle cx="374" cy="112" r="5"/><circle cx="396" cy="119" r="5"/><circle cx="418" cy="112" r="5"/><circle cx="440" cy="118" r="5"/>
+    </g>
+    <path d="M338 134 h116 l-40 62 v40 h-36 v-40 z" fill="#fcfaf4" stroke-width="2"/>
+    <circle cx="396" cy="256" r="7" fill="#9a6a3e" stroke="none"/>
+
+    <!-- answer bubble -->
+    <path d="M488 116 h120 a8 8 0 0 1 8 8 v88 a8 8 0 0 1 -8 8 h-66 l-18 20 l2 -20 h-38 a8 8 0 0 1 -8 -8 v-88 a8 8 0 0 1 8 -8 z" fill="#fcfaf4" stroke-width="2"/>
+
+    <!-- flow -->
+    <path d="M140 186 C 154 178, 166 178, 178 184" stroke="#9a6a3e" stroke-width="2" stroke-dasharray="1 6" marker-end="url(#arrow)"/>
+    <path d="M300 186 C 312 178, 322 178, 332 184" stroke="#9a6a3e" stroke-width="2" stroke-dasharray="1 6" marker-end="url(#arrow)"/>
+    <path d="M440 214 C 456 206, 466 196, 478 186" stroke="#9a6a3e" stroke-width="2" stroke-dasharray="1 6" marker-end="url(#arrow)"/>
+  </g>
+
+  <g font-family="'Instrument Serif', Georgia, 'Times New Roman', serif" fill="#2b2721">
+    <text x="320" y="72" text-anchor="middle" font-size="50">Advanced RAG</text>
+
+    <text x="86" y="290" text-anchor="middle" font-style="italic" font-size="19" fill-opacity=".6">chunks</text>
+    <text x="242" y="290" text-anchor="middle" font-style="italic" font-size="19" fill-opacity=".6">vector store</text>
+    <text x="396" y="290" text-anchor="middle" font-style="italic" font-size="19" fill="#9a6a3e">rerank</text>
+
+    <text x="552" y="152" text-anchor="middle" font-style="italic" font-size="21">up to twenty</text>
+    <text x="552" y="178" text-anchor="middle" font-style="italic" font-size="21">hours a day</text>
+    <text x="552" y="204" text-anchor="middle" font-size="15" fill="#9a6a3e">[cat.txt#25]</text>
+
+    <text x="320" y="334" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="12.5" letter-spacing="3.2" fill-opacity=".4">CHUNK · STORE · HYBRID · RERANK · CACHE</text>
+  </g>
+</svg>

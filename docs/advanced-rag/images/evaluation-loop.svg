@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 1070" role="img" aria-labelledby="t d">
+  <title id="t">Advanced RAG: the evaluation loop</title>
+  <desc id="d">eval/questions.json feeds evaluate_retrieval (hit rate at 3 and MRR per search method, no LLM) and evaluate_answers (correct, cited and refusals with the real LLM). Results are saved to eval/results.md: semantic 89 percent and 0.76, bm25 79 percent and 0.68, hybrid 89 percent and 0.79, hybrid plus rerank 95 percent and 0.84, plus rewrite 95 percent and 0.84; answers 19 of 19 correct, 19 of 19 cited, 3 of 3 refusals. Change one thing, re-run, compare. A quality-gate test fails if retrieval gets worse.</desc>
+  <style>
+    .b { fill: #fcfaf4; stroke: #2b2721; stroke-width: 2; }
+    .l { fill: none; stroke: #2b2721; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .r { fill: none; stroke: #9a6a3e; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .s { font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif; fill: #2b2721; }
+    .m { font-family: Consolas, 'Courier New', monospace; fill: #2b2721; }
+    .c { font-family: Georgia, 'Times New Roman', serif; letter-spacing: 1.6px; fill: #9a6a3e; }
+    .i { font-style: italic; fill-opacity: .72; }
+    .e { fill: #9a6a3e; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M1 1.5 L8.5 5 L1 8.5" fill="none" stroke="#2b2721" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrowe" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M1 1.5 L8.5 5 L1 8.5" fill="none" stroke="#9a6a3e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="720" height="1070" fill="#f4f0e7"/>
+  <rect x="10.5" y="10.5" width="699" height="1049" fill="none" stroke="#2b2721" stroke-opacity=".14"/>
+
+  <text class="s" x="360" y="60" text-anchor="middle" font-size="36">Evaluation · measure, change, repeat</text>
+  <text class="m" x="360" y="92" text-anchor="middle" font-size="15" fill-opacity=".6">uv run python -m advanced_rag.evaluate --answers --save</text>
+
+  <!-- golden set -->
+  <rect class="b" x="140" y="118" width="440" height="88" rx="8"/>
+  <text class="c" x="568" y="140" text-anchor="end" font-size="15">STEP 8</text>
+  <text class="m" x="360" y="160" text-anchor="middle" font-size="19">eval/questions.json</text>
+  <text class="s" x="360" y="190" text-anchor="middle" font-size="17">22 questions: 19 answerable + 3 that aren't</text>
+
+  <path class="l" d="M360 206 v20 M205 226 H515"/>
+  <path class="l" d="M205 226 v24" marker-end="url(#arrow)"/>
+  <path class="l" d="M515 226 v24" marker-end="url(#arrow)"/>
+
+  <!-- two evaluations -->
+  <rect class="b" x="60" y="254" width="290" height="146" rx="8"/>
+  <text class="m" x="205" y="288" text-anchor="middle" font-size="17">evaluate_retrieval()</text>
+  <text class="s" x="205" y="318" text-anchor="middle" font-size="17">hit rate @3 · MRR</text>
+  <text class="s" x="205" y="344" text-anchor="middle" font-size="17">for every search method</text>
+  <text class="s i" x="205" y="376" text-anchor="middle" font-size="16">no LLM · free · seconds</text>
+
+  <rect class="b" x="370" y="254" width="290" height="146" rx="8" stroke="#9a6a3e"/>
+  <text class="m" x="515" y="288" text-anchor="middle" font-size="17">evaluate_answers()</text>
+  <text class="s" x="515" y="318" text-anchor="middle" font-size="17">correct · cited · refusals</text>
+  <text class="s" x="515" y="344" text-anchor="middle" font-size="17">real LLM, cache off</text>
+  <text class="s i" x="515" y="376" text-anchor="middle" font-size="16">22 LLM calls · 1–2 minutes</text>
+
+  <path class="l" d="M205 400 v22 M515 400 v22 M205 422 H515 M360 422 v24" marker-end="url(#arrow)"/>
+
+  <!-- results -->
+  <rect class="b" x="70" y="450" width="580" height="300" rx="10"/>
+  <text class="m" x="360" y="486" text-anchor="middle" font-size="19">eval/results.md</text>
+  <g class="c" font-size="15">
+    <text x="110" y="522">METHOD</text>
+    <text x="400" y="522" text-anchor="end">HIT @3</text>
+    <text x="500" y="522" text-anchor="end">MRR</text>
+    <text x="610" y="522" text-anchor="end">MS / Q</text>
+  </g>
+  <path d="M100 532 H620" stroke="#2b2721" stroke-opacity=".2" stroke-width="1.5"/>
+  <g class="m" font-size="17">
+    <text x="110" y="560">semantic</text><text x="400" y="560" text-anchor="end">89%</text><text x="500" y="560" text-anchor="end">0.76</text><text x="610" y="560" text-anchor="end">9</text>
+    <text x="110" y="588">bm25</text><text x="400" y="588" text-anchor="end">79%</text><text x="500" y="588" text-anchor="end">0.68</text><text x="610" y="588" text-anchor="end">198</text>
+    <text x="110" y="616">hybrid</text><text x="400" y="616" text-anchor="end">89%</text><text x="500" y="616" text-anchor="end">0.79</text><text x="610" y="616" text-anchor="end">228</text>
+    <g class="e"><text x="110" y="644">+ rerank</text><text x="400" y="644" text-anchor="end">95%</text><text x="500" y="644" text-anchor="end">0.84</text><text x="610" y="644" text-anchor="end">379</text></g>
+    <g fill-opacity=".55"><text x="110" y="672">+ rewrite</text><text x="400" y="672" text-anchor="end">95%</text><text x="500" y="672" text-anchor="end">0.84</text><text x="610" y="672" text-anchor="end">4868</text></g>
+  </g>
+  <path d="M100 688 H620" stroke="#2b2721" stroke-opacity=".2" stroke-width="1.5"/>
+  <text class="s e" x="360" y="722" text-anchor="middle" font-size="18">answers: 19/19 correct · 19/19 cited · 3/3 “I don't know”</text>
+
+  <path class="l" d="M360 750 v36" marker-end="url(#arrow)"/>
+
+  <!-- change -->
+  <rect class="b" x="140" y="790" width="440" height="88" rx="8"/>
+  <text class="s" x="360" y="826" text-anchor="middle" font-size="22">change one thing</text>
+  <text class="s i" x="360" y="856" text-anchor="middle" font-size="16">chunking · search method · model · prompt</text>
+
+  <!-- loop back -->
+  <path class="r" d="M140 834 H34 V327 H56" marker-end="url(#arrowe)"/>
+  <text class="s i e" x="360" y="904" text-anchor="middle" font-size="17" style="fill-opacity:1">then re-run and compare the numbers</text>
+
+  <!-- quality gate -->
+  <rect class="b" x="110" y="926" width="500" height="96" rx="8" stroke-dasharray="6 6"/>
+  <text class="c" x="598" y="948" text-anchor="end" font-size="15">STEP 8</text>
+  <text class="m" x="360" y="968" text-anchor="middle" font-size="17">tests/test_evaluate.py</text>
+  <text class="s" x="360" y="1000" text-anchor="middle" font-size="16">quality gate: fails if hybrid + rerank drops below 90% / 0.80</text>
+</svg>

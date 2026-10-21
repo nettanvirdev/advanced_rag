@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 1620" role="img" aria-labelledby="t d">
+  <title id="t">Advanced RAG: answering a question</title>
+  <desc id="d">Every question: FastAPI POST /ask checks the Redis cache; a hit returns in 1 to 4 ms. On a miss, optional query rewriting (off), then hybrid_search combines vectorstore.search (MiniLM and ChromaDB) with bm25.search using reciprocal rank fusion into 20 candidates, the ms-marco-MiniLM-L6-v2 cross-encoder reranks them to the best 3 and drops scores below 0 (none left means I don't know without an LLM call), build_context labels the chunks, llm.ask generates a cited answer, cache.put stores it, and the API returns JSON with answer and cached.</desc>
+  <style>
+    .b { fill: #fcfaf4; stroke: #2b2721; stroke-width: 2; }
+    .l { fill: none; stroke: #2b2721; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .r { fill: none; stroke: #9a6a3e; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .s { font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif; fill: #2b2721; }
+    .m { font-family: Consolas, 'Courier New', monospace; fill: #2b2721; }
+    .c { font-family: Georgia, 'Times New Roman', serif; letter-spacing: 1.6px; fill: #9a6a3e; }
+    .i { font-style: italic; fill-opacity: .72; }
+    .e { fill: #9a6a3e; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M1 1.5 L8.5 5 L1 8.5" fill="none" stroke="#2b2721" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrowe" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M1 1.5 L8.5 5 L1 8.5" fill="none" stroke="#9a6a3e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="720" height="1620" fill="#f4f0e7"/>
+  <rect x="10.5" y="10.5" width="699" height="1599" fill="none" stroke="#2b2721" stroke-opacity=".14"/>
+
+  <text class="s" x="360" y="60" text-anchor="middle" font-size="38">Answering · every question</text>
+  <text class="c" x="360" y="92" text-anchor="middle" font-size="15">WHERE EACH FUNCTION AND MODEL COMES IN</text>
+
+  <!-- client -->
+  <rect class="b" x="140" y="118" width="440" height="80" rx="8"/>
+  <text class="s" x="360" y="150" text-anchor="middle" font-size="20">client: browser, app or curl</text>
+  <text class="m" x="360" y="178" text-anchor="middle" font-size="15">{"question": "How long do cats sleep?"}</text>
+  <path class="l" d="M360 198 v38" marker-end="url(#arrow)"/>
+  <text class="m" x="374" y="223" font-size="15" fill-opacity=".7">POST /ask</text>
+
+  <!-- api -->
+  <rect class="b" x="140" y="240" width="440" height="86" rx="8"/>
+  <text class="c" x="568" y="262" text-anchor="end" font-size="15">STEP 11</text>
+  <text class="m" x="360" y="282" text-anchor="middle" font-size="19">api.ask()  · FastAPI</text>
+  <text class="s i" x="360" y="310" text-anchor="middle" font-size="16">checks the JSON (Pydantic) · bad input → 422</text>
+  <path class="l" d="M360 326 v36" marker-end="url(#arrow)"/>
+
+  <!-- cache get -->
+  <rect class="b" x="140" y="366" width="440" height="86" rx="8"/>
+  <text class="c" x="568" y="388" text-anchor="end" font-size="15">STEP 7</text>
+  <text class="m" x="360" y="408" text-anchor="middle" font-size="19">cache.get(question)</text>
+  <text class="s e" x="360" y="436" text-anchor="middle" font-size="17">Redis · key = sha256(model | question)</text>
+  <path class="l" d="M360 452 v36" marker-end="url(#arrow)"/>
+  <text class="s i e" x="374" y="476" font-size="17" style="fill-opacity:1">miss</text>
+
+  <!-- cache hit branch (right) -->
+  <path class="r" d="M580 409 H646 V1468 H584" marker-end="url(#arrowe)"/>
+  <text class="s i e" x="672" y="938" text-anchor="middle" font-size="17" transform="rotate(90 672 938)">cache hit → answer in 1–4 ms · no search, no LLM</text>
+
+  <!-- rewrite (optional) -->
+  <rect class="b" x="140" y="492" width="440" height="86" rx="8" stroke="#9a6a3e" stroke-dasharray="6 6"/>
+  <text class="c" x="568" y="514" text-anchor="end" font-size="15">STEP 10</text>
+  <text class="m" x="360" y="534" text-anchor="middle" font-size="19">rewrite(question)</text>
+  <text class="s i" x="360" y="562" text-anchor="middle" font-size="16">optional LLM call · off by default (+3.7 s, no gain)</text>
+  <path class="l" d="M360 578 v36" marker-end="url(#arrow)"/>
+
+  <!-- hybrid search -->
+  <rect class="b" x="110" y="618" width="500" height="252" rx="10"/>
+  <text class="c" x="598" y="640" text-anchor="end" font-size="15">STEP 6</text>
+  <text class="m" x="360" y="652" text-anchor="middle" font-size="19">hybrid_search()</text>
+  <rect class="b" x="128" y="668" width="222" height="114" rx="8" stroke="#9a6a3e"/>
+  <text class="m" x="239" y="694" text-anchor="middle" font-size="16">vectorstore.search</text>
+  <text class="s e" x="239" y="718" text-anchor="middle" font-size="15">MiniLM + ChromaDB</text>
+  <text class="s" x="239" y="740" text-anchor="middle" font-size="15">meaning · min similarity 0.3</text>
+  <text class="s i" x="239" y="764" text-anchor="middle" font-size="15">≈ 9 ms</text>
+  <rect class="b" x="370" y="668" width="222" height="114" rx="8"/>
+  <text class="m" x="481" y="694" text-anchor="middle" font-size="16">bm25.search</text>
+  <text class="s" x="481" y="718" text-anchor="middle" font-size="15">exact words (copied</text>
+  <text class="s" x="481" y="740" text-anchor="middle" font-size="15">from simple_rag)</text>
+  <text class="s i" x="481" y="764" text-anchor="middle" font-size="15">≈ 198 ms</text>
+  <path class="l" d="M239 782 v14 H330 M481 782 v14 H390"/>
+  <path class="l" d="M360 796 v10" marker-end="url(#arrow)"/>
+  <rect class="b" x="210" y="810" width="300" height="46" rx="8"/>
+  <text class="m" x="360" y="839" text-anchor="middle" font-size="16">rrf() · 1 / (60 + rank)</text>
+  <path class="l" d="M360 870 v36" marker-end="url(#arrow)"/>
+  <text class="s i e" x="374" y="894" font-size="17" style="fill-opacity:1">20 candidates</text>
+
+  <!-- rerank -->
+  <rect class="b" x="140" y="910" width="440" height="112" rx="8" stroke="#9a6a3e" stroke-width="2.4"/>
+  <text class="c" x="568" y="932" text-anchor="end" font-size="15">STEP 9</text>
+  <text class="m" x="360" y="954" text-anchor="middle" font-size="18">rerank(question, candidates)</text>
+  <text class="s e" x="360" y="982" text-anchor="middle" font-size="16">cross-encoder ms-marco-MiniLM-L6-v2</text>
+  <text class="s" x="360" y="1008" text-anchor="middle" font-size="16">keeps the best 3 · drops scores below 0</text>
+
+  <!-- nothing relevant branch (left) -->
+  <path class="r" d="M140 966 H76 V1508 H136" marker-end="url(#arrowe)"/>
+  <text class="s i e" x="50" y="1237" text-anchor="middle" font-size="17" transform="rotate(-90 50 1237)">nothing ≥ 0 → “I don't know” · no LLM call · ≈ 0.3 s</text>
+
+  <path class="l" d="M360 1022 v36" marker-end="url(#arrow)"/>
+  <text class="s i e" x="374" y="1046" font-size="17" style="fill-opacity:1">top 3 · retrieval ≈ 380 ms</text>
+
+  <!-- context -->
+  <rect class="b" x="140" y="1062" width="440" height="80" rx="8"/>
+  <text class="c" x="568" y="1084" text-anchor="end" font-size="15">STEP 7</text>
+  <text class="m" x="360" y="1102" text-anchor="middle" font-size="18">build_context(hits)</text>
+  <text class="m" x="360" y="1128" text-anchor="middle" font-size="15">"[cat.txt#25]\n&lt;chunk text&gt;"</text>
+  <path class="l" d="M360 1142 v36" marker-end="url(#arrow)"/>
+
+  <!-- llm -->
+  <rect class="b" x="140" y="1182" width="440" height="92" rx="8" stroke="#9a6a3e"/>
+  <text class="c" x="568" y="1204" text-anchor="end" font-size="15">STEP 7</text>
+  <text class="m" x="360" y="1224" text-anchor="middle" font-size="18">llm.ask(prompt, system=RULES)</text>
+  <text class="s e" x="360" y="1254" text-anchor="middle" font-size="16">any OpenAI-compatible LLM · ≈ 3–5 s</text>
+  <path class="l" d="M360 1274 v36" marker-end="url(#arrow)"/>
+
+  <!-- cache put -->
+  <rect class="b" x="140" y="1314" width="440" height="76" rx="8"/>
+  <text class="c" x="568" y="1336" text-anchor="end" font-size="15">STEP 7</text>
+  <text class="m" x="360" y="1354" text-anchor="middle" font-size="18">cache.put(question, answer)</text>
+  <text class="s i" x="360" y="1378" text-anchor="middle" font-size="15">Redis · expires after 1 day</text>
+  <path class="l" d="M360 1390 v36" marker-end="url(#arrow)"/>
+
+  <!-- response -->
+  <rect class="b" x="140" y="1430" width="440" height="120" rx="8"/>
+  <text class="m" x="168" y="1462" font-size="16">{ "answer": "Cats usually sleep</text>
+  <text class="m" x="168" y="1486" font-size="16">    12–16 hours… [cat.txt#25]",</text>
+  <text class="m" x="168" y="1510" font-size="16">  "cached": false }</text>
+  <text class="s i" x="360" y="1538" text-anchor="middle" font-size="15">over HTTP: new 3.1 s · cached 3.7 ms</text>
+
+  <text class="c" x="360" y="1592" text-anchor="middle" font-size="15" style="fill:#2b2721" fill-opacity=".45">CACHE · RETRIEVE · RERANK · GENERATE</text>
+</svg>

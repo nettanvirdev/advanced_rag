@@ -1,0 +1,36 @@
+[project]
+name = "advanced-rag"
+version = "0.1.0"
+description = "Advanced RAG from scratch: chunking, ChromaDB, hybrid search, reranking, Redis caching, evaluation and FastAPI, built step by step."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [
+    { name = "nettanvirdev", email = "tanvirahamed.official@outlook.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "chromadb>=1.5.9",
+    "fastapi[standard]>=0.156.8",
+    "openai>=3.35.1",
+    "python-dotenv>=1.2.4",
+    "redis>=8.1.0",
+    "sentence-transformers>=6.1.0",
+]
+
+[project.scripts]
+advanced-rag = "advanced_rag:main"
+
+[build-system]
+requires = ["uv_build>=0.12.16,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "fakeredis>=2.40.0",
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+# chromadb warns about passing embedding_function=None; we embed ourselves on purpose
+filterwarnings = ["ignore:legacy embedding function config:DeprecationWarning"]

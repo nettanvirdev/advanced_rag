@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 1110" role="img" aria-labelledby="t d">
+  <title id="t">Advanced RAG: the indexing pipeline</title>
+  <desc id="d">Runs once: loaders.load_folder reads the text files, chunking.chunk_documents splits them into 210 chunks of at most 200 tokens, embeddings.embed turns every chunk into 384 numbers with all-MiniLM-L6-v2 in one batch, and vectorstore.add_chunks upserts them into ChromaDB on disk. Rebuilding also calls cache.clear to drop old cached answers.</desc>
+  <style>
+    .b { fill: #fcfaf4; stroke: #2b2721; stroke-width: 2; }
+    .l { fill: none; stroke: #2b2721; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .d { fill: none; stroke: #9a6a3e; stroke-width: 2; stroke-dasharray: 2 7; stroke-linecap: round; }
+    .s { font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif; fill: #2b2721; }
+    .m { font-family: Consolas, 'Courier New', monospace; fill: #2b2721; }
+    .c { font-family: Georgia, 'Times New Roman', serif; letter-spacing: 1.6px; fill: #9a6a3e; }
+    .i { font-style: italic; fill-opacity: .72; }
+    .e { fill: #9a6a3e; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M1 1.5 L8.5 5 L1 8.5" fill="none" stroke="#2b2721" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="720" height="1110" fill="#f4f0e7"/>
+  <rect x="10.5" y="10.5" width="699" height="1089" fill="none" stroke="#2b2721" stroke-opacity=".14"/>
+
+  <text class="s" x="360" y="60" text-anchor="middle" font-size="38">Indexing · runs once</text>
+  <text class="m" x="360" y="92" text-anchor="middle" font-size="15" fill-opacity=".6">uv run python -m advanced_rag.vectorstore --build</text>
+
+  <!-- data -->
+  <rect class="b" x="130" y="122" width="460" height="78" rx="8"/>
+  <text class="m" x="360" y="156" text-anchor="middle" font-size="20">data/*.txt</text>
+  <text class="s i" x="360" y="184" text-anchor="middle" font-size="16">4 Wikipedia articles · 33,739 tokens</text>
+  <path class="l" d="M360 200 v32" marker-end="url(#arrow)"/>
+
+  <!-- load -->
+  <rect class="b" x="130" y="236" width="460" height="86" rx="8"/>
+  <text class="c" x="578" y="258" text-anchor="end" font-size="15">STEP 1</text>
+  <text class="m" x="360" y="276" text-anchor="middle" font-size="19">loaders.load_folder()</text>
+  <text class="m" x="360" y="306" text-anchor="middle" font-size="16">→ Document(text, source)</text>
+  <path class="l" d="M360 322 v32" marker-end="url(#arrow)"/>
+
+  <!-- chunk -->
+  <rect class="b" x="110" y="358" width="500" height="176" rx="8"/>
+  <text class="c" x="598" y="380" text-anchor="end" font-size="15">STEPS 3–4</text>
+  <text class="m" x="360" y="400" text-anchor="middle" font-size="19">chunking.chunk_documents()</text>
+  <text class="s" x="134" y="434" font-size="17"><tspan class="m" font-size="16">split_sentences</tspan>  cut after . ! ? and line breaks</text>
+  <text class="s" x="134" y="462" font-size="17"><tspan class="m" font-size="16">chunk_text</tspan>  pack sentences, ≤ 200 tokens each</text>
+  <text class="s" x="134" y="490" font-size="17"><tspan class="m" font-size="16">overlap</tspan>  repeat the last sentence, if it fits</text>
+  <text class="s e" x="360" y="520" text-anchor="middle" font-size="17">→ 210 × Chunk(text, source, index)</text>
+  <path class="l" d="M360 534 v32" marker-end="url(#arrow)"/>
+
+  <!-- embed -->
+  <rect class="b" x="130" y="570" width="460" height="114" rx="8" stroke="#9a6a3e"/>
+  <text class="c" x="578" y="592" text-anchor="end" font-size="15">STEP 2</text>
+  <text class="m" x="360" y="612" text-anchor="middle" font-size="19">embeddings.embed(texts)</text>
+  <text class="s e" x="360" y="642" text-anchor="middle" font-size="17">all-MiniLM-L6-v2 · 384 numbers per chunk</text>
+  <text class="s i" x="360" y="668" text-anchor="middle" font-size="16">one batch call: 1.48 s (one by one: 2.82 s)</text>
+  <path class="l" d="M360 684 v32" marker-end="url(#arrow)"/>
+
+  <!-- store -->
+  <rect class="b" x="130" y="720" width="460" height="92" rx="8"/>
+  <text class="c" x="578" y="742" text-anchor="end" font-size="15">STEP 5</text>
+  <text class="m" x="360" y="762" text-anchor="middle" font-size="19">vectorstore.add_chunks()</text>
+  <text class="s" x="360" y="792" text-anchor="middle" font-size="17">upsert · id “cat.txt#25” · text + source + index</text>
+  <path class="l" d="M360 812 v34" marker-end="url(#arrow)"/>
+
+  <!-- chroma cylinder -->
+  <path class="b" d="M190 872 v108 a170 22 0 0 0 340 0 v-108"/>
+  <ellipse class="b" cx="360" cy="872" rx="170" ry="22"/>
+  <text class="s" x="360" y="930" text-anchor="middle" font-size="27">ChromaDB</text>
+  <text class="m" x="360" y="958" text-anchor="middle" font-size="16">storage/chroma</text>
+  <text class="s i" x="360" y="984" text-anchor="middle" font-size="16">cosine · HNSW index · on disk</text>
+
+  <!-- cache.clear note -->
+  <path class="d" d="M530 930 H560"/>
+  <rect class="b" x="562" y="880" width="140" height="104" rx="8" stroke="#9a6a3e" stroke-dasharray="4 5"/>
+  <text class="m" x="632" y="910" text-anchor="middle" font-size="15">cache.clear()</text>
+  <text class="s" x="632" y="936" text-anchor="middle" font-size="15">drops old cached</text>
+  <text class="s" x="632" y="956" text-anchor="middle" font-size="15">answers on rebuild</text>
+  <text class="c" x="632" y="976" text-anchor="middle" font-size="15">STEP 7</text>
+
+  <text class="s i" x="360" y="1046" text-anchor="middle" font-size="18" style="fill-opacity:.85">built in 2.7 s · reopened in 13 ms · each search then ≈ 9 ms</text>
+  <text class="c" x="360" y="1080" text-anchor="middle" font-size="15" style="fill:#2b2721" fill-opacity=".45">INDEX ONCE · SEARCH MANY TIMES</text>
+</svg>
