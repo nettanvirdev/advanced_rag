@@ -26,27 +26,27 @@ def test_rrf_ignores_score_scales():
 # the `index` fixture (the real index, built once) lives in conftest.py
 
 def test_all_chunks_reads_every_stored_chunk(index):
-    collection, chunks = index
-    assert len(chunks) == collection.count() == 210
+    collection, bm25 = index
+    assert len(bm25.chunks) == collection.count() == 210
 
 
 def test_hybrid_finds_exact_names_that_semantic_misses(index):
-    collection, chunks = index
+    collection, bm25 = index
     # semantic search alone ranks a coffee chunk first for this (score 0.20)
     assert vectorstore.search(collection, "Guido van Rossum")[0][1].source == "coffee.txt"
-    assert hybrid_search(collection, chunks, "Guido van Rossum")[0][1].source == "python_language.txt"
+    assert hybrid_search(collection, bm25, "Guido van Rossum")[0][1].source == "python_language.txt"
 
 
 def test_hybrid_finds_exact_numbers(index):
-    collection, chunks = index
-    assert vectorstore.chunk_id(hybrid_search(collection, chunks, "9 bar")[0][1]) == "coffee.txt#45"
+    collection, bm25 = index
+    assert vectorstore.chunk_id(hybrid_search(collection, bm25, "9 bar")[0][1]) == "coffee.txt#45"
 
 
 def test_hybrid_returns_nothing_for_nonsense(index):
-    collection, chunks = index
-    assert hybrid_search(collection, chunks, "asdfgh") == []
+    collection, bm25 = index
+    assert hybrid_search(collection, bm25, "asdfgh") == []
 
 
 def test_hybrid_keeps_good_semantic_answers(index):
-    collection, chunks = index
-    assert vectorstore.chunk_id(hybrid_search(collection, chunks, "How long do cats sleep?")[0][1]) == "cat.txt#25"
+    collection, bm25 = index
+    assert vectorstore.chunk_id(hybrid_search(collection, bm25, "How long do cats sleep?")[0][1]) == "cat.txt#25"

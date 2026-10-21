@@ -21,6 +21,6 @@ def test_multi_line_reply_becomes_one_line(monkeypatch):
 
 def test_a_useless_rewrite_cannot_hurt(index, fake_llm):
     # the rewritten query only ADDS candidates; reranking still judges against the original question
-    collection, chunks = index
-    hits = retrieve("How long do cats sleep?", collection, chunks, rewrite_query=True)
+    collection, bm25 = index
+    hits = retrieve("How long do cats sleep?", collection, bm25, rewrite_query=True)
     assert vectorstore.chunk_id(hits[0][1]) == "cat.txt#25"

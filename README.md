@@ -1,176 +1,142 @@
-# Advanced RAG
+# Advanced RAG: production branch
 
 ![Advanced RAG: chunks are stored once, searched with hybrid search, reranked, and answered with a cited source](docs/advanced-rag/thumbnail.svg)
 
-Take a simple RAG and make it production-shaped, one measured step at a time: **chunking**, a **vector database**, **hybrid search**, **reranking**, a **Redis cache**, an **evaluation** set, and a **FastAPI** server, all in plain Python with tests.
+> **You're on the `optimization` branch:** the guide's optimizations implemented, measured and tested, packaged to run as a service. Clone it, drop your `.txt` files into `data/`, and run `docker compose up`.
+> Learning RAG step by step? The [`main`](https://github.com/nettanvirdev/advanced_rag/tree/main) branch keeps the code simple, with an 11-step guide.
 
-Every step shows a **before vs. after table with real measured numbers**, so you can see exactly what each idea buys you.
+Hybrid search (BM25 + semantic) → cross-encoder reranking → an LLM answer that cites its source, behind a FastAPI service. Exact and semantic answer caches, streaming, an incremental index, and a CI quality gate.
 
 ```
 POST /ask {"question": "How long do cats sleep?"}
-→ {"answer": "Cats usually sleep 12–16 hours per day … [cat.txt#25]", "cached": false}   3.1 s
-→ {"answer": "Cats usually sleep 12–16 hours per day … [cat.txt#25]", "cached": true}    3.7 ms
-
+→ {"answer": "Cats usually sleep 12–16 hours per day … [cat.txt#25]", "cached": null}         fresh: retrieval + LLM
+→ {"answer": "Cats usually sleep 12–16 hours per day … [cat.txt#25]", "cached": "exact"}      same question again
+POST /ask {"question": "How many hours a day does a cat sleep?"}
+→ {"answer": "Cats usually sleep 12–16 hours per day … [cat.txt#25]", "cached": "semantic"}   same meaning, no LLM call
 POST /ask {"question": "What is the capital of France?"}
-→ {"answer": "I don't know", "cached": false}                                             324 ms, no LLM call
+→ {"answer": "I don't know", "cached": null}                                                 no LLM call
 ```
 
-> **Start with the basics?** This builds on **[simple_rag](https://github.com/nettanvirdev/simple_rag)**, where you build keyword search, TF-IDF, BM25, semantic search and a first RAG from scratch.
-
 ---
 
-## What you'll learn, and what each step measurably buys
+## Quick start (Docker)
 
-| Technique | The idea in one sentence | Measured on this repo |
-|---|---|---|
-| **Chunking** | cut long documents into ≤200-token pieces so the embedding model sees all of them | one embedding of `cat.txt` saw **2.5%** of it → **100%** embedded |
-| **Vector database** (ChromaDB) | embed every chunk once, store it on disk, embed only the question | **1,482 ms → ~9 ms** per search |
-| **Hybrid search** (BM25 + semantic, RRF) | meaning *and* exact words, fused by rank | "Guido van Rossum": wrong file → right file; MRR **0.76 → 0.79** |
-| **Redis cache** | the same question twice costs one LLM call | **4,886 ms → 1 ms** on a repeat |
-| **Evaluation** | a golden question set with hit rate, MRR and answer checks | found the bottleneck (retrieval) and a real bug |
-| **Reranking** (cross-encoder) | a precise second model re-sorts the top 20 candidates | hit rate **89% → 95%**, answers **17/19 → 19/19** |
-| **Query rewriting** | the LLM rewrites the question into search words | **no gain** here, +4.5 s per question → kept off, and why |
-| **FastAPI** | the whole pipeline as a validated web API | `/ask`, `/search`, `/health`, auto docs at `/docs` |
-| **Optimization guide** | proven ideas for speed and cost, with how to measure them | e.g. BM25 **198 ms → 0.2 ms** with precomputation |
-
-## Final evaluation
-
-22 questions (19 the articles answer, 3 they don't) in [`eval/questions.json`](eval/questions.json). Full results, including every answer: **[`eval/results.md`](eval/results.md)**.
-
-| Retrieval method | Hit rate @3 | MRR | ms / question |
-|---|---|---|---|
-| semantic | 89% | 0.76 | 9 |
-| bm25 | 79% | 0.68 | 198 |
-| hybrid | 89% | 0.79 | 228 |
-| **hybrid + rerank** (used) | **95%** | **0.84** | 379 |
-| + query rewriting | 95% | 0.84 | 4,868 |
-
-| Answers (hybrid + rerank, real LLM) | Score |
-|---|---|
-| Correct | **19/19** |
-| Cited a chunk | **19/19** |
-| Said "I don't know" when it should | **3/3** |
-
-Reproduce: `uv run python -m advanced_rag.evaluate --answers --rewrite --save`. Numbers will vary slightly with your LLM.
-
----
-
-## Start learning
-
-📘 **[The step-by-step guide →](docs/advanced-rag/README.md)**: 11 steps. Each has theory, a **before vs. after (measured)** table, a code example, a goal with a checkpoint, tests, and a hidden solution.
-
-⚡ **[Optimization guide →](docs/advanced-rag/optimization/README.md)**: caching, latency, cost and retrieval ideas that work in real systems, each with how to measure it. Kept out of the code on purpose.
-
-🗺️ **[Diagrams →](docs/advanced-rag/diagrams.md)**: where every function and model sits in the indexing and query pipelines.
-
-📐 **[Concepts →](docs/advanced-rag/concepts.md)**: the theory, formulas and a cheat sheet.
-
-| # | Step | # | Step |
-|---|---|---|---|
-| 1 | [Project setup](docs/advanced-rag/step-01-project-setup.md) | 7 | [Redis cache](docs/advanced-rag/step-07-redis-cache.md) |
-| 2 | [Embeddings and dimensions](docs/advanced-rag/step-02-embeddings-and-dimensions.md) | 8 | [Evaluation](docs/advanced-rag/step-08-evaluation.md) |
-| 3 | [Chunking: split and pack](docs/advanced-rag/step-03-chunking-split-and-pack.md) | 9 | [Reranking](docs/advanced-rag/step-09-reranking.md) |
-| 4 | [Chunking: overlap and records](docs/advanced-rag/step-04-chunking-overlap-and-records.md) | 10 | [Query rewriting](docs/advanced-rag/step-10-query-rewriting.md) |
-| 5 | [ChromaDB vector store](docs/advanced-rag/step-05-chromadb-vector-store.md) | 11 | [FastAPI](docs/advanced-rag/step-11-fastapi.md) |
-| 6 | [Hybrid retrieval](docs/advanced-rag/step-06-hybrid-retrieval.md) | | |
-
----
-
-## Setup
-
-### Requirements
-- **[uv](https://docs.astral.sh/uv/)**: it installs Python 3.12 for you.
-- **Docker**, for Redis (or any Redis 6+ on `localhost:6379`).
-- **About 1.5 GB of disk** for PyTorch, the embedding model and the reranker, and internet on the first run.
-- **An OpenAI-compatible LLM** for answers (Ollama locally, OpenAI, Groq, OpenRouter, …). Search, reranking and the retrieval evaluation need no API key.
-
-### 1. Install
 ```bash
-git clone https://github.com/nettanvirdev/advanced_rag.git
+git clone -b optimization https://github.com/nettanvirdev/advanced_rag.git
 cd advanced_rag
+cp .env.example .env        # set LLM_API_KEY, LLM_BASE_URL, LLM_MODEL
+docker compose up --build
+```
+
+Open **http://localhost:8000/docs**. The first build downloads PyTorch (CPU-only) and bakes both models into the image, so containers start without any downloads. On startup the API indexes `data/`. Only new or changed text is embedded, so a restart with unchanged files takes about a second.
+
+**Use your own documents:** put `.txt` files in `data/` (replacing the 4 practice articles), then `docker compose restart api`. Removed files leave the index; edited files are re-embedded; cached answers are cleared when anything changed.
+
+## Quick start (local)
+
+Requires [uv](https://docs.astral.sh/uv/) and, optionally, Redis.
+
+```bash
 uv sync
-```
-
-### 2. Configure
-```bash
 cp .env.example .env
-```
-Set `LLM_API_KEY`, `LLM_BASE_URL` and `LLM_MODEL` for your provider. For a local Ollama: `http://localhost:11434/v1`, key `ollama`. Leave the rest as is.
-
-### 3. Start Redis
-```bash
-docker run -d --name redis -p 6379:6379 redis:7-alpine
-```
-
-### 4. Build the index (once, and again whenever `data/` changes)
-```bash
-uv run python -m advanced_rag.vectorstore --build
-```
-This chunks the 4 articles in `data/` into 210 chunks, embeds them, and saves them to `storage/chroma`. It takes about 3 s. Type a question to search, and press `Ctrl+C` to leave.
-
-### 5. Try it
-```bash
-uv run python -m advanced_rag.retrieval.hybrid
-```
-```bash
-uv run python -m advanced_rag.rag
-```
-```bash
+uv run advanced-rag build
 uv run uvicorn advanced_rag.api:app --port 8000
 ```
-- `hybrid` compares semantic vs. BM25 vs. hybrid side by side (try `Guido van Rossum`, `9 bar`, `asdfgh`).
-- `rag` answers questions with citations. Ask the same thing twice and watch the cache.
-- `uvicorn` starts the API. Open http://localhost:8000/docs to try `/ask` in the browser.
 
-### 6. Evaluate and test
-```bash
-uv run python -m advanced_rag.evaluate
-```
-```bash
-uv run pytest -v
-```
-- `evaluate` measures retrieval for every method (free, no LLM). Add `--answers` to also check the LLM's answers.
-- The tests never call the real LLM or your real Redis: they use a fake LLM and `fakeredis`. `tests/test_config.py` checks *your* setup, so it expects a filled-in `.env` and the `storage/chroma` folder from step 4.
-
-### Troubleshooting
-| You see | What it means |
-|---|---|
-| Warnings about symlinks on Windows or `HF_TOKEN` | Harmless. They come from the model download. |
-| `redis.exceptions.ConnectionError` | Redis isn't running. See step 3. |
-| `0 chunks` / empty search results | Build the index first (step 4). |
-| `openai.AuthenticationError` | Check the three `LLM_*` values in `.env`. |
+No Redis? Leave `REDIS_URL` empty. Everything works without the exact cache.
 
 ---
+
+## API
+
+| Endpoint | What it does |
+|---|---|
+| `POST /ask` | `{"question", "k"?, "sources"?}` → `{"answer", "cached": "exact" \| "semantic" \| null}` |
+| `POST /ask/stream` | Same input. The answer streams as plain text while the LLM writes it (`curl -N`) |
+| `GET /search?q=&k=&source=` | Retrieval only, no LLM: the chunks an answer would be built from |
+| `GET /health` | `{"status", "chunks", "redis"}`: **503** when the index is empty, so a broken deploy fails its health check |
+
+- **Auth:** set `API_KEY` and every endpoint except `/health` requires an `X-API-Key` header.
+- **Filters:** `"sources": ["cat.txt"]` (or `?source=cat.txt`) searches only those files. Filtered answers are cached separately.
+- **Errors:** bad input is a `422` (empty, whitespace-only or over 1,000 characters; `k` outside 1–10). An LLM that times out or is down is a `503` after 2 retries, never a hanging request or a stack trace. If Redis goes down, answers keep working: Redis is skipped for 30 s after a failure, and `/health` reports `"redis": "down"`.
+- **Logs:** one line per request with its total time, plus per-stage timings (`retrieve_ms`, `llm_ms`, `llm_first_token_ms`), the cache result, the top chunk and score, and the LLM's token usage. Every response carries an `X-Response-Time-Ms` header.
+
+## Configuration
+
+Everything has a tested default; only the three `LLM_*` values are required. See [`.env.example`](.env.example).
+
+| Variable | Default | |
+|---|---|---|
+| `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` | | any OpenAI-compatible API (OpenAI, Groq, OpenRouter, Ollama, …) |
+| `LLM_TIMEOUT` / `LLM_MAX_TOKENS` | `60` / `0` (no cap) | seconds per call / answer length cap |
+| `API_KEY` | empty (open) | require `X-API-Key` |
+| `REDIS_URL` | empty (no exact cache) | Compose sets it for you |
+| `CACHE_TTL_SECONDS` | `86400` | both caches |
+| `SEMANTIC_CACHE_THRESHOLD` | `0.85` | `0` turns the semantic cache off |
+| `RERANK_CANDIDATES` | `20` | the measured sweet spot |
+| `EMBEDDING_MODEL`, `RERANK_MODEL` | MiniLM-L6 models | change the embedding model → `advanced-rag build` |
+| `DATA_DIR`, `CHROMA_DIR` | `data`, `storage/chroma` | |
+
+---
+
+## What's optimized, and what it measured
+
+Same machine, same 210 chunks, the 19 answerable questions in [`eval/questions.json`](eval/questions.json). Quality must not drop: retrieval stayed at **95% hit rate / MRR 0.84** and answers at **19/19 correct, 19/19 cited, 3/3 refusals** with everything below turned on.
+
+| # | Optimization ([guide](docs/advanced-rag/optimization/README.md)) | Status | Before → after |
+|---|---|---|---|
+| 1 | Precomputed BM25 (an inverted index built once) | ✅ | **320 ms → 0.18 ms** per search, identical results on every eval question (tested) |
+| 2 | Batching + embedding caches | ✅ | Repeat query embedding **~7 ms → ~0**; restart with unchanged data re-embeds **0 of 210** chunks; moved text reuses its vector |
+| 3 | Semantic cache, with a safety guard | ✅ | A paraphrase skips the **3–5 s** LLM call. It's reused only if the new question retrieves the **same best chunk**, so "How long do *pythons* sleep?" never gets the cat answer (tested) |
+| 4 | Rerank pool | ✅ | Kept at **20** (measured: 40 adds 158 ms for no gain); configurable |
+| 5 | Faster models (ONNX) | ❌ skipped | `sentence-transformers[onnx]` can't install with sentence-transformers 6 (`optimum-onnx` pins `transformers<4.58`). The image uses **CPU-only PyTorch** instead |
+| 6 | Streaming | ✅ | `POST /ask/stream`; the first piece is awaited before the 200 is sent, so outages are still a clean 503 |
+| 7 | LLM cost and latency | ✅ | Rules first (prefix-cacheable), optional `max_tokens`, token usage logged, timeout + retries |
+| 8 | Better retrieval | ◐ | Source filters ✅. Query rewriting measured **+4.5 s for 0 gain**, so it stays off; HyDE/multi-query add the same LLM cost and aren't included |
+| 9 | Production | ✅ | Docker + Compose, models baked in, non-root, healthcheck, readiness `/health`, API key, CI with the quality gate |
+
+**Where a fresh question's time goes now:** cache check ~1 ms → hybrid search **~11 ms** (was ~228) → rerank ~160 ms → LLM 3–5 s. Retrieval: **~170 ms** (was ~380).
+
+Reproduce: `uv run python -m advanced_rag.evaluate --answers`.
+
+## Production notes
+
+- **One worker per container.** Chroma's on-disk index belongs to one process. FastAPI still serves requests concurrently in its thread pool. Scale out with more containers, each with its own `index` volume.
+- **Bigger corpora:** BM25 lives in RAM (fine to roughly a million chunks), and startup re-chunks every file to detect changes. Beyond that, move keyword search to OpenSearch and track file modification times.
+- **Rate limiting and TLS** belong in front of the app (a reverse proxy or API gateway).
+- **GPU:** remove the `[tool.uv.sources]` block in `pyproject.toml` to get CUDA PyTorch.
+
+## Tests
+
+```bash
+uv run pytest
+```
+126 tests, all offline: a fake LLM and `fakeredis`, and every test gets its own temporary storage, so your Redis and `storage/` are never touched. `tests/test_evaluate.py` is a quality gate: CI fails if retrieval drops below 90% hit rate. CI also builds the Docker image.
 
 ## Project structure
 
 ```
-advanced_rag/
-├── data/                       4 Wikipedia articles (.txt) + SOURCES.md
-├── eval/
-│   ├── questions.json          the golden set: 22 questions
-│   └── results.md              the latest measured results
-├── docs/advanced-rag/          the guide: 11 steps, optimization/, concepts, diagrams
-├── src/advanced_rag/
-│   ├── config.py               settings from .env
-│   ├── loaders.py              files → Document(text, source)
-│   ├── embeddings.py           embed(), dimension(), count_tokens()   [all-MiniLM-L6-v2]
-│   ├── chunking.py             split_sentences(), chunk_text(), chunk_documents()
-│   ├── vectorstore.py          ChromaDB: build_index(), add_chunks(), search(), all_chunks()
-│   ├── retrieval/
-│   │   ├── keyword.py, tfidf.py, bm25.py   (from simple_rag)
-│   │   ├── hybrid.py           semantic + BM25 fused with RRF
-│   │   ├── rerank.py           cross-encoder reranking   [ms-marco-MiniLM-L6-v2]
-│   │   └── rewrite.py          LLM query rewriting (off by default)
-│   ├── cache.py                Redis answer cache
-│   ├── llm.py                  ask(): any OpenAI-compatible API
-│   ├── rag.py                  retrieve() + answer()
-│   ├── evaluate.py             hit rate, MRR, answer checks → eval/results.md
-│   └── api.py                  FastAPI: /ask, /search, /health
-└── tests/                      98 tests; fake LLM + fakeredis in conftest.py
+src/advanced_rag/
+├── config.py          every setting, with defaults
+├── loaders.py         files → Document(text, source)
+├── chunking.py        sentence packing, ≤200 tokens, 1 overlap
+├── embeddings.py      embed(), embed_query() (cached)
+├── vectorstore.py     ChromaDB: incremental build_index(), search() with filters
+├── retrieval/
+│   ├── bm25.py        BM25Index: precomputed postings
+│   ├── hybrid.py      semantic + BM25, fused with RRF
+│   ├── rerank.py      cross-encoder
+│   └── rewrite.py     LLM query rewriting (off)
+├── cache.py           exact (Redis) + semantic (Chroma) caches, failure-tolerant
+├── llm.py             ask(), stream(): timeout, retries, usage logging
+├── rag.py             retrieve(), answer(), answer_stream()
+├── evaluate.py        hit rate, MRR, answer checks
+├── api.py             FastAPI service
+└── __init__.py        CLI: advanced-rag build | clear-cache
+Dockerfile, docker-compose.yml, .github/workflows/ci.yml
 ```
 
 ## Data and license
 The practice texts in `data/` are English Wikipedia articles, licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) (see [`data/SOURCES.md`](data/SOURCES.md)). The code and guides are licensed under the [Apache License 2.0](LICENSE).
 
-The guides are also published at **[nettanvir.dev/docs](https://nettanvir.dev/docs/advanced-rag)**.
+The step-by-step guides are published at **[nettanvir.dev/docs](https://nettanvir.dev/docs/advanced-rag)**.

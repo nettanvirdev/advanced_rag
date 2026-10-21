@@ -47,8 +47,8 @@ def test_every_relevant_phrase_really_exists_in_the_data():
 
 def test_retrieval_quality_does_not_drop(index):
     # a quality gate: if a change to chunking or search makes retrieval worse, this fails
-    collection, chunks = index
-    report = evaluate_retrieval(collection, chunks, load_questions())
+    collection, bm25 = index
+    report = evaluate_retrieval(collection, bm25, load_questions())
     assert report["hybrid"]["hit_rate"] >= 0.85
     assert report["hybrid"]["mrr"] >= 0.75
     # reranking must stay at least as good as it measured when it was added (95% / 0.84)

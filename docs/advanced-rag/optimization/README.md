@@ -12,7 +12,7 @@ minutes: 6
 
 # Optimization: making RAG fast and cheap
 
-> **These ideas are not implemented in this repo on purpose. The code stays simple.** Each page shows how you'd do it and how to measure it.
+> **On the `main` branch these ideas stay out of the code on purpose, to keep it simple.** The [`optimization` branch](https://github.com/nettanvirdev/advanced_rag/tree/optimization) implements, measures and tests them. Its README has the before/after numbers.
 
 **You'll learn:** where the time goes in this pipeline, how to read a latency budget, and which optimizations are worth doing first.
 

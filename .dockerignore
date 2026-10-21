@@ -1,0 +1,12 @@
+.git
+.github
+.venv
+.env
+.pytest_cache
+**/__pycache__
+storage
+docs
+eval
+tests
+linkedin
+learning.md

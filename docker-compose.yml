@@ -1,0 +1,34 @@
+# docker compose up --build   →   http://localhost:8000/docs
+services:
+  api:
+    build: .
+    ports: ["8000:8000"]
+    env_file:
+      - path: .env
+        required: false # search works without it; answering needs the LLM settings
+    environment:
+      REDIS_URL: redis://redis:6379/0 # inside compose, the host name is the service name
+    volumes:
+      - ./data:/app/data:ro # your .txt files; restart the api to index changes
+      - index:/app/storage # the Chroma index and semantic cache survive restarts
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    # a cache, not a database: bounded memory, least-recently-used answers evicted first
+    command: redis-server --save 300 1 --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  index:
+  redis:

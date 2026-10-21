@@ -29,3 +29,14 @@ def test_text_past_256_tokens_is_ignored():
     tail = " Kittens sleep twenty hours a day." * 20
     a, b = embed([head, head + tail])
     assert sum(x * y for x, y in zip(a, b)) == approx(1.0, abs=1e-4)
+
+
+def test_query_embedding_is_cached_and_identical():
+    from advanced_rag.embeddings import embed_query
+
+    embed_query.cache_clear()
+    first = embed_query("How long do cats sleep?")
+    second = embed_query("How long do cats sleep?")
+    assert first == second
+    assert embed_query.cache_info().hits == 1
+    assert list(first) == approx(embed(["How long do cats sleep?"])[0], abs=1e-6)

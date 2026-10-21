@@ -3,7 +3,7 @@ import time
 
 from advanced_rag import config, vectorstore
 from advanced_rag.chunking import Chunk
-from advanced_rag.retrieval import bm25
+from advanced_rag.retrieval.bm25 import BM25Index
 from advanced_rag.retrieval.hybrid import hybrid_search
 
 QUESTIONS_FILE = config.ROOT / "eval" / "questions.json"
@@ -35,18 +35,18 @@ def retrieval_scores(ranks: list[int | None], k: int = 3) -> dict:
 
 
 def evaluate_retrieval(
-    collection, chunks: list[Chunk], questions: list[dict], k: int = 3, include_rewrite: bool = False
+    collection, bm25: BM25Index, questions: list[dict], k: int = 3, include_rewrite: bool = False
 ) -> dict:
     from advanced_rag.rag import retrieve
 
     methods = {
         "semantic": lambda q: vectorstore.search(collection, q, 10),
-        "bm25": lambda q: bm25.search(q, chunks, 10),
-        "hybrid": lambda q: hybrid_search(collection, chunks, q, k=10),
-        "hybrid+rerank": lambda q: retrieve(q, collection, chunks, k=10),
+        "bm25": lambda q: bm25.search(q, 10),
+        "hybrid": lambda q: hybrid_search(collection, bm25, q, k=10),
+        "hybrid+rerank": lambda q: retrieve(q, collection, bm25, k=10),
     }
     if include_rewrite:  # costs one real LLM call per question
-        methods["+rewrite"] = lambda q: retrieve(q, collection, chunks, k=10, rewrite_query=True)
+        methods["+rewrite"] = lambda q: retrieve(q, collection, bm25, k=10, rewrite_query=True)
 
     answerable = [q for q in questions if q["relevant"]]
     report = {}
@@ -65,12 +65,12 @@ def is_correct(answer: str, answer_contains: list[str]) -> bool:
     return any(expected in text for expected in answer_contains)
 
 
-def evaluate_answers(collection, chunks: list[Chunk], questions: list[dict]) -> list[dict]:
+def evaluate_answers(collection, bm25: BM25Index, questions: list[dict]) -> list[dict]:
     from advanced_rag.rag import answer
 
     results = []
     for q in questions:
-        reply = answer(q["question"], collection, chunks, use_cache=False)
+        reply = answer(q["question"], collection, bm25, use_cache=False).text
         results.append({
             "question": q["question"],
             "answerable": q["relevant"] is not None,
@@ -123,17 +123,17 @@ if __name__ == "__main__":
     import sys
 
     collection = vectorstore.get_collection()
-    chunks = vectorstore.all_chunks(collection)
+    bm25 = BM25Index(vectorstore.all_chunks(collection))
     questions = load_questions()
 
-    retrieval = evaluate_retrieval(collection, chunks, questions, include_rewrite="--rewrite" in sys.argv)
+    retrieval = evaluate_retrieval(collection, bm25, questions, include_rewrite="--rewrite" in sys.argv)
     print(f"Retrieval ({sum(1 for q in questions if q['relevant'])} answerable questions, top 3)")
     for name, scores in retrieval.items():
         print(f"  {name:14} hit rate {scores['hit_rate']:.0%}   MRR {scores['mrr']:.2f}   {scores['ms']:.0f} ms/question")
 
     results = None
     if "--answers" in sys.argv:
-        results = evaluate_answers(collection, chunks, questions)
+        results = evaluate_answers(collection, bm25, questions)
         answerable = [r for r in results if r["answerable"]]
         refusals = [r for r in results if not r["answerable"]]
         print(f"\nAnswers ({len(results)} LLM calls)")
